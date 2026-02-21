@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # launchd uses a minimal PATH that excludes Homebrew — add it explicitly.
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
@@ -119,14 +120,18 @@ run_sync() {
     kill -9 $CPID > /dev/null 2>&1
 
     echo "Sync process complete."
-    osascript -e 'display notification "New Claude Session Started!" with title "Claude Sync"'
   fi
 
   # ---- Schedule next wake -----------------------------------------------------
   # Each run schedules the Mac to wake at the configured interval, forming a
   # self-sustaining chain. Requires the passwordless sudoers rule created by install.sh.
-  local INTERVAL_MINUTES=60
-  [ -f "$SCRIPT_DIR/.interval" ] && INTERVAL_MINUTES=$(cat "$SCRIPT_DIR/.interval")
+  if [ ! -f "$SCRIPT_DIR/.interval" ]; then
+    echo "WARN: .interval not found — run install.sh first. Skipping wake schedule."
+    echo "--- SYNC END: $(date) ---"
+    echo ""
+    return
+  fi
+  local INTERVAL_MINUTES=$(cat "$SCRIPT_DIR/.interval")
   NEXT_WAKE=$(date -v+"${INTERVAL_MINUTES}M" '+%m/%d/%Y %H:%M:%S')
   if sudo pmset schedule wake "$NEXT_WAKE" 2>/dev/null; then
     echo "Next wake scheduled: $NEXT_WAKE"

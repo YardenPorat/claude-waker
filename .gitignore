@@ -143,5 +143,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
+# custom
 .history
 .vscode/settings.json
+.interval
