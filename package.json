@@ -1,0 +1,12 @@
+{
+  "name": "claude-waker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {},
+  "dependencies": {},
+  "volta": {
+    "node": "22.21.0",
+    "pnpm": "10.20.0"
+  }
+}
