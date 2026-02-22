@@ -60,7 +60,7 @@ schedule_next_wake() {
   done
 
   NEXT_WAKE=$(date -v+"${OFFSET_MINUTES}M" '+%m/%d/%Y %H:%M:%S')
-  if sudo pmset schedule wake "$NEXT_WAKE" 2>/dev/null; then
+  if sudo pmset schedule poweron "$NEXT_WAKE" 2>/dev/null; then
     echo "Next wake scheduled: $NEXT_WAKE"
   else
     echo "WARN: Failed to schedule next wake (run install.sh to fix sudoers)"

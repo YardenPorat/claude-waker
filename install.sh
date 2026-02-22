@@ -49,7 +49,7 @@ SUDOERS_FILE="/etc/sudoers.d/claude-waker"
 if [ ! -f "$SUDOERS_FILE" ]; then
   echo ""
   echo "Setting up passwordless wake scheduling (requires sudo once)..."
-  echo "$USER ALL=(root) NOPASSWD: /usr/bin/pmset schedule wake *" | sudo tee "$SUDOERS_FILE" > /dev/null
+  echo "$USER ALL=(root) NOPASSWD: /usr/bin/pmset schedule poweron *" | sudo tee "$SUDOERS_FILE" > /dev/null
   sudo chmod 0440 "$SUDOERS_FILE"
   echo "Created $SUDOERS_FILE"
 fi
@@ -59,5 +59,5 @@ sudo pmset repeat cancel 2>/dev/null
 
 # Schedule the first wake to kick off the chain
 FIRST_WAKE=$(date -v+"${INTERVAL_MINUTES}M" '+%m/%d/%Y %H:%M:%S')
-sudo pmset schedule wake "$FIRST_WAKE"
+sudo pmset schedule poweron "$FIRST_WAKE"
 echo "First wake scheduled: $FIRST_WAKE"

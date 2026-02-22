@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "setup": "bash install.sh 30"
+  },
   "dependencies": {},
   "volta": {
     "node": "22.21.0"
