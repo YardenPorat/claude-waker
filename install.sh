@@ -5,10 +5,12 @@ PLIST_DEST="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"
 CONFIG_FILE="$SCRIPT_DIR/.interval"
 
 INTERVAL_MINUTES="${1:-60}"
+SKIP_HOURS="${2:-3,4,5}"
 INTERVAL_SECONDS=$((INTERVAL_MINUTES * 60))
 
-# Persist interval so claude_sync.sh can read it for wake scheduling
+# Persist config so claude_sync.sh can read it
 echo "$INTERVAL_MINUTES" > "$CONFIG_FILE"
+echo "$SKIP_HOURS" > "$SCRIPT_DIR/.skip_hours"
 
 # Unload existing agent if present
 launchctl unload "$PLIST_DEST" 2>/dev/null
@@ -28,6 +30,8 @@ cat > "$PLIST_DEST" <<EOF
     </array>
     <key>StartInterval</key>
     <integer>$INTERVAL_SECONDS</integer>
+    <key>RunAtLoad</key>
+    <true/>
 </dict>
 </plist>
 EOF
@@ -36,6 +40,7 @@ launchctl load "$PLIST_DEST"
 echo "Installed and loaded $PLIST_DEST"
 echo "Script path: $SCRIPT_DIR/claude_sync.sh"
 echo "Interval: every $INTERVAL_MINUTES minutes"
+echo "Skip hours: $SKIP_HOURS"
 
 # --- Passwordless sudo for pmset schedule wake --------------------------------
 # The sync script schedules the next Mac wake after each run.

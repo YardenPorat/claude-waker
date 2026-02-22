@@ -147,3 +147,4 @@ vite.config.ts.timestamp-*
 .history
 .vscode/settings.json
 .interval
+.skip_hours
