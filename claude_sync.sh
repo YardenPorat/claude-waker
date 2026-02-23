@@ -135,7 +135,6 @@ run_sync() {
   tmux send-keys -t "$SESSION" Enter
 
   # Poll for the stats panel instead of a fixed 10 s sleep.
-  # The API round-trip is usually 2–4 s; 20 s timeout is generous.
   if ! wait_for "$SESSION" "% used|resets " 20; then
     echo "WARN: /usage stats did not appear within 20 s"
   fi
@@ -156,7 +155,7 @@ run_sync() {
   # The /usage panel shows lines like:
   #   "34% used"             → active session with usage data
   #   "Resets 12pm (tz)"     → when the window resets
-  if echo "$CLEAN_OUTPUT" | grep -iqE "% used|resets "; then
+  if echo "$CLEAN_OUTPUT" | grep -iqE "% resets "; then
     echo "✅ Active session detected. Skipping ping."
     UI_STATUS=$(echo "$CLEAN_OUTPUT" | grep -iE "% used|resets " | xargs)
     echo "Scraped Status: $UI_STATUS"

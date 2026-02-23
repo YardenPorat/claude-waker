@@ -5,7 +5,7 @@ PLIST_DEST="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"
 CONFIG_FILE="$SCRIPT_DIR/.interval"
 
 INTERVAL_MINUTES="${1:-60}"
-SKIP_HOURS="${2:-3,4,5}"
+SKIP_HOURS="${2:-0,1,2,3,4,5,19,20,21,22,23}"  # Default: skip 7pm-6am
 INTERVAL_SECONDS=$((INTERVAL_MINUTES * 60))
 
 # Persist config so claude_sync.sh can read it
