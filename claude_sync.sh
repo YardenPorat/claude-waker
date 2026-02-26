@@ -60,6 +60,7 @@ schedule_next_wake() {
   done
 
   NEXT_WAKE=$(date -v+"${OFFSET_MINUTES}M" '+%m/%d/%Y %H:%M:%S')
+  sudo pmset schedule wake "$NEXT_WAKE" 2>/dev/null
   if sudo pmset schedule poweron "$NEXT_WAKE" 2>/dev/null; then
     echo "Next wake scheduled: $NEXT_WAKE"
   else
