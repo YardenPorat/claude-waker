@@ -158,7 +158,7 @@ run_sync() {
     UI_STATUS=$(echo "$CLEAN_OUTPUT" | grep -iE "% used|resets " | xargs)
     echo "Scraped Status: $UI_STATUS"
   
-  if echo "$CLEAN_OUTPUT" | grep -iqE "% resets "; then
+  if echo "$CLEAN_OUTPUT" | grep -iqE "resets"; then
     echo "✅ Active session detected. Skipping ping."
   else
     echo "❌ No active session found. Triggering 'Hi' ping..."
