@@ -29,43 +29,51 @@ wait_for() {
 }
 
 # ---------------------------------------------------------------------------
-# schedule_next_wake
-#   Schedules the Mac to wake at the next non-skipped interval.
-#   If the computed wake time lands in a skip hour, keeps advancing by
-#   INTERVAL_MINUTES until it finds an allowed hour.
+# schedule_all_wakes
+#   Schedules the Mac to wake at EVERY active hour for the rest of today and
+#   all of tomorrow. This "shotgun" approach is far more reliable than a
+#   single one-shot wake — if one pmset event fails, the next one still fires.
 # ---------------------------------------------------------------------------
-schedule_next_wake() {
-  if [ ! -f "$SCRIPT_DIR/.interval" ]; then
-    echo "WARN: .interval not found — run install.sh first. Skipping wake schedule."
-    return
-  fi
-
-  local INTERVAL_MINUTES=$(cat "$SCRIPT_DIR/.interval")
+schedule_all_wakes() {
+  local INTERVAL_MINUTES=60
+  [ -f "$SCRIPT_DIR/.interval" ] && INTERVAL_MINUTES=$(cat "$SCRIPT_DIR/.interval")
   local SKIP_HOURS=""
   [ -f "$SCRIPT_DIR/.skip_hours" ] && SKIP_HOURS=$(cat "$SCRIPT_DIR/.skip_hours")
 
-  local OFFSET_MINUTES=$INTERVAL_MINUTES
-  while true; do
-    local WAKE_HOUR=$(date -v+"${OFFSET_MINUTES}M" '+%-H')
-    # If no skip hours configured, or this hour is allowed, use it
-    if [ -z "$SKIP_HOURS" ] || ! echo ",$SKIP_HOURS," | grep -q ",$WAKE_HOUR,"; then
-      break
+  local TODAY=$(date '+%m/%d/%Y')
+  local TOMORROW=$(date -v+1d '+%m/%d/%Y')
+  local NOW_MINUTES=$(( $(date '+%-H') * 60 + $(date '+%-M') ))
+  local scheduled=0
+
+  # Generate wake times at every INTERVAL_MINUTES within each active hour.
+  # e.g. interval=30 → 06:00, 06:30, 07:00, 07:30, …, 18:00, 18:30
+  for h in $(seq 0 23); do
+    if [ -n "$SKIP_HOURS" ] && echo ",$SKIP_HOURS," | grep -q ",$h,"; then
+      continue
     fi
-    OFFSET_MINUTES=$((OFFSET_MINUTES + INTERVAL_MINUTES))
-    # Safety: don't loop more than 24 hours ahead
-    if [ "$OFFSET_MINUTES" -gt 1440 ]; then
-      echo "WARN: Could not find a non-skipped hour within 24 h"
-      return
-    fi
+
+    local m=0
+    while [ "$m" -lt 60 ]; do
+      local TIME=$(printf "%02d:%02d:00" "$h" "$m")
+      local SLOT_MINUTES=$(( h * 60 + m ))
+
+      # Schedule remaining slots today (only future times)
+      if [ "$SLOT_MINUTES" -gt "$NOW_MINUTES" ]; then
+        sudo pmset schedule wake "$TODAY $TIME" 2>/dev/null
+        sudo pmset schedule poweron "$TODAY $TIME" 2>/dev/null
+        scheduled=$((scheduled + 1))
+      fi
+
+      # Always schedule all slots tomorrow
+      sudo pmset schedule wake "$TOMORROW $TIME" 2>/dev/null
+      sudo pmset schedule poweron "$TOMORROW $TIME" 2>/dev/null
+      scheduled=$((scheduled + 1))
+
+      m=$((m + INTERVAL_MINUTES))
+    done
   done
 
-  NEXT_WAKE=$(date -v+"${OFFSET_MINUTES}M" '+%m/%d/%Y %H:%M:%S')
-  sudo pmset schedule wake "$NEXT_WAKE" 2>/dev/null
-  if sudo pmset schedule poweron "$NEXT_WAKE" 2>/dev/null; then
-    echo "Next wake scheduled: $NEXT_WAKE"
-  else
-    echo "WARN: Failed to schedule next wake (run install.sh to fix sudoers)"
-  fi
+  echo "Scheduled $scheduled wake events every ${INTERVAL_MINUTES}m during active hours (today + tomorrow)"
 }
 
 run_sync() {
@@ -79,7 +87,7 @@ run_sync() {
     local SKIP_HOURS=$(cat "$SCRIPT_DIR/.skip_hours")
     if echo ",$SKIP_HOURS," | grep -q ",$CURRENT_HOUR,"; then
       echo "Skipping — hour $CURRENT_HOUR is in skip list ($SKIP_HOURS)"
-      schedule_next_wake
+      schedule_all_wakes
       echo "--- SYNC END: $(date) ---"
       echo ""
       return
@@ -178,7 +186,7 @@ run_sync() {
   fi
 
   # ---- Schedule next wake -----------------------------------------------------
-  schedule_next_wake
+  schedule_all_wakes
 
   echo "--- SYNC END: $(date) ---"
   echo ""
