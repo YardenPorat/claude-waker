@@ -4,10 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "setup": "bash install.sh 30"
+    "setup": "bash install.sh 30",
+    "reset": "bash reset.sh"
   },
   "dependencies": {},
   "volta": {
-    "node": "22.21.0"
+    "node": "24.14.0"
   }
 }

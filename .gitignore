@@ -149,3 +149,4 @@ vite.config.ts.timestamp-*
 .interval
 .skip_hours
 .standby_original
+.hibernatemode_original

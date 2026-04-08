@@ -32,6 +32,8 @@ cat > "$PLIST_DEST" <<EOF
     <integer>$INTERVAL_SECONDS</integer>
     <key>RunAtLoad</key>
     <true/>
+    <key>AbandonProcessGroup</key>
+    <true/>
 </dict>
 </plist>
 EOF
@@ -48,7 +50,7 @@ echo "Skip hours: $SKIP_HOURS"
 SUDOERS_FILE="/etc/sudoers.d/claude-waker"
 echo ""
 echo "Setting up passwordless wake scheduling (requires sudo once)..."
-echo "$USER ALL=(root) NOPASSWD: /usr/bin/pmset schedule wake *, /usr/bin/pmset schedule poweron *, /usr/bin/pmset repeat cancel, /usr/bin/pmset repeat wakeorpoweron *" | sudo tee "$SUDOERS_FILE" > /dev/null
+echo "$USER ALL=(root) NOPASSWD: /usr/bin/pmset schedule wake *, /usr/bin/pmset schedule poweron *, /usr/bin/pmset repeat cancel, /usr/bin/pmset repeat wakeorpoweron *, /usr/bin/pmset -a hibernatemode *, /usr/bin/pmset -a standby *" | sudo tee "$SUDOERS_FILE" > /dev/null
 sudo chmod 0440 "$SUDOERS_FILE"
 echo "Created $SUDOERS_FILE"
 
@@ -73,13 +75,17 @@ else
   sudo pmset repeat cancel 2>/dev/null
 fi
 
-# --- Disable deep standby for reliable wake -----------------------------------
-# Apple Silicon in deep standby ignores pmset wake events. Save the original
-# value so reset.sh can restore it, then disable standby.
+# --- Disable hibernation & deep standby for reliable wake ----------------------
+# Apple Silicon in hibernation/deep standby ignores pmset wake events.
+# hibernatemode 0 = normal sleep (RAM stays powered, no disk image)
+# standby 0      = never transition from sleep to standby/hibernate
+ORIG_HIBERNATE=$(pmset -g | awk '/^ hibernatemode /{print $2}')
 ORIG_STANDBY=$(pmset -g | awk '/^ standby /{print $2}')
+echo "$ORIG_HIBERNATE" > "$SCRIPT_DIR/.hibernatemode_original"
 echo "$ORIG_STANDBY" > "$SCRIPT_DIR/.standby_original"
+sudo pmset -a hibernatemode 0
 sudo pmset -a standby 0
-echo "Disabled deep standby (was: ${ORIG_STANDBY:-unknown})"
+echo "Disabled hibernation (was: ${ORIG_HIBERNATE:-unknown}) and standby (was: ${ORIG_STANDBY:-unknown})"
 
 # Schedule wakes at fixed intervals during active hours (today + tomorrow)
 echo ""

@@ -20,7 +20,18 @@ fi
 sudo pmset repeat cancel 2>/dev/null
 echo "Cancelled pmset repeat wake"
 
-# --- Restore original standby setting ----------------------------------------
+# --- Restore original hibernatemode & standby ---------------------------------
+if [ -f "$SCRIPT_DIR/.hibernatemode_original" ]; then
+  ORIG_HIBERNATE=$(cat "$SCRIPT_DIR/.hibernatemode_original")
+  if [ -n "$ORIG_HIBERNATE" ]; then
+    sudo pmset -a hibernatemode "$ORIG_HIBERNATE"
+    echo "Restored hibernatemode to: $ORIG_HIBERNATE"
+  fi
+else
+  sudo pmset -a hibernatemode 3
+  echo "Restored hibernatemode to default: 3"
+fi
+
 if [ -f "$SCRIPT_DIR/.standby_original" ]; then
   ORIG_STANDBY=$(cat "$SCRIPT_DIR/.standby_original")
   if [ -n "$ORIG_STANDBY" ]; then
@@ -41,7 +52,7 @@ else
 fi
 
 # --- Remove config files -----------------------------------------------------
-rm -f "$SCRIPT_DIR/.interval" "$SCRIPT_DIR/.skip_hours" "$SCRIPT_DIR/.standby_original"
+rm -f "$SCRIPT_DIR/.interval" "$SCRIPT_DIR/.skip_hours" "$SCRIPT_DIR/.standby_original" "$SCRIPT_DIR/.hibernatemode_original"
 echo "Removed config files"
 
 echo ""
